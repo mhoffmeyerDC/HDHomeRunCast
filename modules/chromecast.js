@@ -6,7 +6,7 @@ function chromeCast() {
 
 	var client = new Client();
 	var player = null;
-	var playerPromise = null;
+	this.playerPromise = null;
 	var chromeCastIP = null;
 
 	findChromecast().then(function(ip) {
@@ -21,10 +21,13 @@ function chromeCast() {
 			});
 		} else {
 			channel = req.params.channel;
-			playerPromise = goCast(chromeCastIP);
-			playerPromise.then(() => {
+			this.playerPromise = goCast(chromeCastIP);
+			this.playerPromise.then(function() {
+				console.log("player resolved");
 				res.status(200).send('Playback Started');
-			});
+			});//.catch(() => {
+			//	res.status(500).send('Playback Failed');
+			//});
 			
 		}
 	}
@@ -82,8 +85,8 @@ function chromeCast() {
 
 	function playVideo(err, playerInstance) {
 		player = playerInstance;
-
-		var pathToMovie = 'http://192.168.0.12:4000/cable/'+ channel;
+		var apiLocation = process.env.API_LOCATION = 'http://192.168.0.12:4000';
+		var pathToMovie = apiLocation + '/cable/'+ channel;
 			var media = {
 			contentId:  pathToMovie,
 			contentType: 'video/mp4',
@@ -96,18 +99,16 @@ function chromeCast() {
 			}        
 		};
 
-		player.on('status', function(status) {
-			console.log('status broadcast playerState=%s', status.playerState);
-		});
-
 		player.load(media, { autoplay: true }, onPlay);
 	}
 
 	function onPlay(err, status) {
-		playerPromise = Promise.resolve(status);
+		console.log('this.playerPromise', this.playerPromise);
+		this.playerPromise = Promise.resolve(status);
+		console.log('this.playerPromiseAfter', this.playerPromise);
 		if(err) {
 			console.log("Error:",err);
-			playerPromise.reject(err);
+			this.playerPromise = Promise.reject(err);
 		}
 	}
 }
