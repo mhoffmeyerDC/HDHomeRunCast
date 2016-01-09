@@ -1,0 +1,23 @@
+{
+  "name": "streamy",
+  "version": "1.0.0",
+  "description": "",
+  "main": "streamy.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://bitbucket.org/mhoffmeyerG/streamy.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "homepage": "https://bitbucket.org/mhoffmeyerG/streamy#readme",
+  "dependencies": {
+    "castv2-client": "^1.1.0",
+    "express": "^4.13.3",
+    "fluent-ffmpeg": "^2.0.1",
+    "mdns": "^2.2.11",
+    "node-libnmap": "^0.2.15"
+  }
+}
