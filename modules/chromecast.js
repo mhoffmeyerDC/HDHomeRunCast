@@ -1,12 +1,12 @@
 "use strict";
 
 function chromeCast() {
-	var Client                = require('castv2-client').Client;
-	var DefaultMediaReceiver  = require('castv2-client').DefaultMediaReceiver;
-	var mdns                  = require('mdns');
-    var Q                     = require('q');
+	var Client = require('castv2-client').Client;
+	var DefaultMediaReceiver = require('castv2-client').DefaultMediaReceiver;
+	var mdns = require('mdns');
+    var Q = require('q');
     
-	var channel 			  = 804; //N-B-C
+	var channel  = 804; //NBC 
     
 	var client = new Client();
 	var player = null;
@@ -26,27 +26,20 @@ function chromeCast() {
 		} else {
 			channel = req.params.channel;
 			playerPromise = goCast(chromeCastIP);
-			playerPromise.promise.then(function() {
+			playerPromise.promise.then(() => {
 				res.status(200).send('Playback Started');
-				var request = require('request');
-				setTimeout(function() {
-					console.log("Pausing?");
-					request('http://192.168.0.74:4000/pause');
-					setTimeout(function() { 
-					request('http://192.168.0.74:4000/resume');
-
-				}, 5000);
-
-				}, 500);
 			}).catch(() => {
 				res.status(500).send('Playback Failed');
-			}).progress(function (progress) {
-			    // We get notified of the upload's progress
+			}).progress((progress) => {
+			    console.log('status broadcast playerState=%s', progress.playerState);
 			});
 
 		}
 	}
 
+	/**
+	 * Stops playback
+	 */
 	this.stop = function(req, res) {
 		if(player) {
 			player.stop();
@@ -57,12 +50,9 @@ function chromeCast() {
 		}
 	}
 
-	this.pause = function(req, res) {
-		if(player) {
-
-		}
-	}
-
+	/**
+	 * @return {Promise} - Promise containing the IP address of the first Chromecast found on your network
+	 */
 	function findChromecast() {
 		return new Promise( function (resolve, reject) {
 			var browser = createBrowser();
@@ -82,6 +72,9 @@ function chromeCast() {
 		});
 	}
 
+	/**
+	 * @return {Object} MDNS Browser Instance 
+	 */
 	function createBrowser() {
 		var sequence = [
 			mdns.rst.DNSServiceResolve(),
@@ -91,6 +84,10 @@ function chromeCast() {
 		return mdns.createBrowser(mdns.tcp('googlecast'), {resolverSequence: sequence});
 	}
 
+	/**
+	 * @param  {string} host - IP Address of the chromecast
+	 * @return {Promise} - Promise indicating the status of the Chromecast playback
+	 */
 	function goCast(host) {
         var deferred = Q.defer();
            client.connect(host, function onChromecastConnect() {
@@ -105,6 +102,9 @@ function chromeCast() {
         return deferred;
 	}
 
+	/**
+	 * Loads a video on the passed playInstance returned from goCast
+	 */
 	function playVideo(err, playerInstance) {
 		player = playerInstance;
 		var apiLocation = process.env.API_LOCATION;
@@ -122,13 +122,15 @@ function chromeCast() {
 		};
 
 		player.on('status', function(status) {
-			console.log('status broadcast playerState=%s', status.playerState);
-			playerPromise.notify(err);
+			playerPromise.notify(status);
 		});
 
 		player.load(media, { autoplay: true }, onPlay);
 	}
 
+	/**
+	 * Callback once Chromecast starts playing, used to resolve playerPromise
+	 */
 	function onPlay(err, status) {
 		if(err) {
 			console.log("Error:",err);

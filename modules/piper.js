@@ -2,11 +2,14 @@
 
 var ffmpeg = require('fluent-ffmpeg');
 var es = require('event-stream');
+var ps = require('pause-stream')();
 
 function Transcoder() {
   var through = require('through');
  
   this.play = function (req, res) {
+    res.contentType('flv');
+
     //TODO move hdhomerun selection (finding via mdns?) to seperate module
     let hdHomerunNetwork;
     if(req.params.broadCast === 'cable') {
@@ -15,17 +18,9 @@ function Transcoder() {
       hdHomerunNetwork = process.env.HDHOMERUN_OTA_IP || '192.168.0.61'
     }
 
-    res.contentType('flv');
     var videoStream = videoConverter(hdHomerunNetwork, req.params.channel);
-    videoStream
-    .pipe(es.through(function write(data) {
-        this.emit('data', data);
-        
-        //this.pause()
-      },
-      function end () { //optional
-        this.emit('end')
-      }))
+    return videoStream
+    .pipe(streamRegulator)
     .pipe(res);
   }
 
@@ -37,6 +32,27 @@ function Transcoder() {
   this.resumeStream = function() {
     videoStream.resume();
   }
+
+  function streamRegulator() {
+    // return es.through(setTimeout(function() {
+    //   console.log("pausing");
+    //   ps.pause();
+    //   setTimeout(function() {
+    //     console.log("resuming");
+    //     ps.resume();
+    //   }, 5000);
+    // }, 5000));
+    
+    // console.log("streamRegulator")
+    // return through(
+    //   function write(data) {
+    //     console.log(data);
+    //     this.emit('data', data);
+    //     //this.pause()
+    //   }
+    // );
+  }
+
   /**
    * @param  {string} ip - IP Address of the HDHomerun Tuner
    * @param  {string} channel - Channel to tune
