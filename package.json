@@ -18,6 +18,7 @@
     "event-stream": "^3.3.2",
     "express": "^4.13.3",
     "fluent-ffmpeg": "^2.0.1",
+    "highland": "^2.6.0",
     "mdns": "^2.2.11",
     "node-libnmap": "^0.2.15",
     "pause-stream": "0.0.11",
