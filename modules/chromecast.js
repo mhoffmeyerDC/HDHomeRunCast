@@ -4,14 +4,10 @@ function chromeCast() {
 	var Client = require('castv2-client').Client;
 	var DefaultMediaReceiver = require('castv2-client').DefaultMediaReceiver;
 	var mdns = require('mdns');
-    var Q = require('q');
-    
-	var channel  = 804; //NBC 
-    
+  var Q = require('q');
+
 	var client = new Client();
-	var player = null;
-	var playerPromise = null;
-	var chromeCastIP = null;
+	var player, playerPromise, chromeCastIP, channel;
 
 	findChromecast().then(function(ip) {
 		chromeCastIP = ip;
@@ -28,8 +24,8 @@ function chromeCast() {
 			playerPromise = goCast(chromeCastIP);
 			playerPromise.promise.then(() => {
 				res.status(200).send('Playback Started');
-			}).catch(() => {
-				res.status(500).send('Playback Failed');
+			}).catch((err) => {
+				res.status(500).send('Playback Failed: ', err);
 			}).progress((progress) => {
 			    console.log('status broadcast playerState=%s', progress.playerState);
 			});
@@ -54,13 +50,15 @@ function chromeCast() {
 	 * @return {Promise} - Promise containing the IP address of the first Chromecast found on your network
 	 */
 	function findChromecast() {
-		return new Promise( function (resolve, reject) {
+		return new Promise(function(resolve, reject) {
 			var browser = createBrowser();
 			browser.start();
 
-			browser.on('serviceUp', function (service) {
-			  	resolve(service.addresses[0]);
-			  	browser.stop();
+			browser.on('serviceUp', function(service) {
+				if (service.name === 'Chromecast-ad1f30f7025d01768776e9a38e50f219') {
+					resolve(service.addresses[0]);
+				}
+				browser.stop();
 			});
 
 			browser.on('error', reject);
@@ -73,7 +71,7 @@ function chromeCast() {
 	}
 
 	/**
-	 * @return {Object} MDNS Browser Instance 
+	 * @return {Object} MDNS Browser Instance
 	 */
 	function createBrowser() {
 		var sequence = [
@@ -98,7 +96,7 @@ function chromeCast() {
 				deferred.reject(err);
 				client.close();
 			});
-            
+
         return deferred;
 	}
 
@@ -108,7 +106,8 @@ function chromeCast() {
 	function playVideo(err, playerInstance) {
 		player = playerInstance;
 		var apiLocation = process.env.API_LOCATION;
-		var pathToMovie = apiLocation + '/cable/'+ channel;
+		var pathToMovie = apiLocation + '/tv/'+ channel;
+
 		var media = {
 			contentId:  pathToMovie,
 			contentType: 'video/mp4',
@@ -136,7 +135,7 @@ function chromeCast() {
 			console.log("Error:",err);
 			return playerPromise.reject(err);
 		}
-		playerPromise.resolve(status);	
+		playerPromise.resolve(status);
 	}
 }
 

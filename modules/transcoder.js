@@ -24,12 +24,13 @@ function Transcoder() {
     res.contentType('flv');
 
     //TODO move hdhomerun selection (finding via mdns?) to seperate module
-    let hdHomerunNetwork;
-    if (req.params.broadCast === 'cable') {
-      hdHomerunNetwork = process.env.HDHOMERUN_CABLE_IP || '192.168.0.60';
-    } else {
-      hdHomerunNetwork = process.env.HDHOMERUN_OTA_IP || '192.168.0.61'
-    }
+    // let hdHomerunNetwork;
+    let hdHomerunNetwork = process.env.HDHOMERUN_CABLE_IP || '192.168.0.209';
+    // if (req.params.broadCast === 'cable') {
+    //   hdHomerunNetwork = process.env.HDHOMERUN_CABLE_IP || '192.168.0.60';
+    // } else {
+    //   hdHomerunNetwork = process.env.HDHOMERUN_OTA_IP || '192.168.0.61'
+    // }
 
     var videoStream = videoConverter(hdHomerunNetwork, req.params.channel);
     var through = _();
@@ -68,11 +69,11 @@ function Transcoder() {
    * @return {Readable} ffmpeg - Video stream returned from ffmpeg in x264
    */
   function videoConverter(ip, channel) {
-    var pathToMovie = 'http://' + ip + ':5004/tuner2/v' + channel;
+    var pathToMovie = 'http://' + ip + ':5004/tuner1/v' + channel;
     var outputOptions = process.env.FFMPEG_OUTPUT_OPTIONS || ['-preset ultrafast', '-tune fastdecode', '-tune zerolatency', '-threads 2', '-async 1'];
     return ffmpeg(pathToMovie)
       .format('avi')
-      .videoBitrate('1024k')
+      .videoBitrate('2048k')
       .videoCodec('libx264')
       .size('720x?')
       .audioBitrate('128k')
