@@ -1,66 +1,16 @@
 "use strict";
 
 var ffmpeg = require('fluent-ffmpeg');
-var TransformStream = require('./transformStream');
-
-var _ = require('highland');
 
 function Transcoder() {
-  var stream = null;
-
-  this.pauseStream = function(req, res) {
-    ts.pause();
-    res.send("Paused");
-  }
-
-  this.resumeStream = function(req, res) {
-    ts.resume();
-    res.send("Resumed");
-  }
-
-  var ts = new TransformStream();
 
   this.play = function(req, res) {
     res.contentType('flv');
 
-    //TODO move hdhomerun selection (finding via mdns?) to seperate module
-    // let hdHomerunNetwork;
-    let hdHomerunNetwork = process.env.HDHOMERUN_CABLE_IP || '192.168.0.209';
-    // if (req.params.broadCast === 'cable') {
-    //   hdHomerunNetwork = process.env.HDHOMERUN_CABLE_IP || '192.168.0.60';
-    // } else {
-    //   hdHomerunNetwork = process.env.HDHOMERUN_OTA_IP || '192.168.0.61'
-    // }
+    let hdHomerunNetwork = process.env.HDHOMERUN_IP || '192.168.0.22';
 
     var videoStream = videoConverter(hdHomerunNetwork, req.params.channel);
-    var through = _();
-
-    videoStream.pipe(ts).pipe(res);
-  }
-
-
-
-  function streamRegulator(s) {
-    stream = s;
-    return s;
-
-    // return es.through(setTimeout(function() {
-    //   console.log("pausing");
-    //   ps.pause();
-    //   setTimeout(function() {
-    //     console.log("resuming");
-    //     ps.resume();
-    //   }, 5000);
-    // }, 5000));
-
-    // console.log("streamRegulator")
-    // return through(
-    //   function write(data) {
-    //     console.log(data);
-    //     this.emit('data', data);
-    //     //this.pause()
-    //   }
-    // );
+    videoStream.pipe(res);
   }
 
   /**
